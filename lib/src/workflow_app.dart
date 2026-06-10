@@ -78,6 +78,7 @@ class _WorkflowAppState extends State<WorkflowApp> {
     return MaterialApp(
       title: 'Workflow',
       debugShowCheckedModeBanner: false,
+
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF0F766E),

@@ -4,6 +4,7 @@ import '../../core/models.dart';
 import '../../core/session_store.dart';
 import 'pages/dashboard_page.dart';
 import 'pages/tramites_page.dart';
+import 'pages/usuario_pide_page.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({
@@ -35,11 +36,16 @@ class _HomeShellState extends State<HomeShell> {
         label: 'Seguimiento de tramites',
         icon: Icons.assignment_turned_in_outlined,
       ),
+      _NavDestination(
+        label: 'Usuario Pide',
+        icon: Icons.record_voice_over_outlined,
+      ),
     ];
 
     final pages = [
       DashboardPage(session: widget.session),
       TramitesPage(session: widget.session),
+      UsuarioPidePage(session: widget.session),
     ];
 
     return LayoutBuilder(
