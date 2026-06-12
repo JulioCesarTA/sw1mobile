@@ -18,7 +18,7 @@ class _TramitesPageState extends State<TramitesPage> {
   final HomeRepository _repository = HomeRepository();
   final TextEditingController _searchController = TextEditingController();
 
-  late Future<List<TramiteItem>> _future;
+  late Future<CachedResult<List<TramiteItem>>> _future;
   String _query = '';
 
   @override
@@ -53,7 +53,7 @@ class _TramitesPageState extends State<TramitesPage> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<TramiteItem>>(
+    return FutureBuilder<CachedResult<List<TramiteItem>>>(
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -67,7 +67,8 @@ class _TramitesPageState extends State<TramitesPage> {
           return _TramitesError(message: message, onRetry: _reload);
         }
 
-        final items = snapshot.data ?? const <TramiteItem>[];
+        final result = snapshot.data!;
+        final items = result.data;
         final filtered = items.where((item) {
           final haystack = [
             item.code,
@@ -83,6 +84,28 @@ class _TramitesPageState extends State<TramitesPage> {
           child: ListView(
             padding: const EdgeInsets.all(24),
             children: [
+              if (result.fromCache)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFFBEB),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFFDE68A)),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.wifi_off, color: Color(0xFFD97706), size: 18),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Sin conexión — mostrando datos en caché.',
+                          style: TextStyle(fontSize: 13, color: Color(0xFF92400E)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               Text(
                 'Mis trámites',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(

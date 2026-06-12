@@ -204,7 +204,7 @@ class _UsuarioPidePageState extends State<UsuarioPidePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: const [
-        Text('Usuario Pide',
+        Text('Asignacion de Workflow',
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF1E293B))),
         SizedBox(height: 4),
         Text(

@@ -15,7 +15,7 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   final HomeRepository _repository = HomeRepository();
-  late Future<DashboardStats> _future;
+  late Future<CachedResult<DashboardStats>> _future;
 
   @override
   void initState() {
@@ -32,7 +32,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<DashboardStats>(
+    return FutureBuilder<CachedResult<DashboardStats>>(
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -46,12 +46,15 @@ class _DashboardPageState extends State<DashboardPage> {
           return _ErrorState(message: message, onRetry: _reload);
         }
 
-        final stats = snapshot.data!;
+        final result = snapshot.data!;
+        final stats = result.data;
+
         return RefreshIndicator(
           onRefresh: _reload,
           child: ListView(
             padding: const EdgeInsets.all(24),
             children: [
+              if (result.fromCache) _OfflineBanner(),
               Text(
                 'Dashboard',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
@@ -127,6 +130,33 @@ class _DashboardPageState extends State<DashboardPage> {
         .split('_')
         .map((part) => part.isEmpty ? part : '${part[0].toUpperCase()}${part.substring(1)}')
         .join(' ');
+  }
+}
+
+class _OfflineBanner extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFBEB),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFFDE68A)),
+      ),
+      child: const Row(
+        children: [
+          Icon(Icons.wifi_off, color: Color(0xFFD97706), size: 18),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Sin conexión — mostrando datos en caché.',
+              style: TextStyle(fontSize: 13, color: Color(0xFF92400E)),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

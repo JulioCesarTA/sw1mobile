@@ -37,8 +37,8 @@ class _HomeShellState extends State<HomeShell> {
         icon: Icons.assignment_turned_in_outlined,
       ),
       _NavDestination(
-        label: 'Usuario Pide',
-        icon: Icons.record_voice_over_outlined,
+        label: 'Asignacion de Workflow',
+        icon: Icons.account_tree_outlined,
       ),
     ];
 
