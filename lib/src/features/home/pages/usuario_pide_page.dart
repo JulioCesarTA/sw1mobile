@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/api_config.dart';
 import '../../../core/models.dart';
@@ -19,9 +20,38 @@ class _UsuarioPidePageState extends State<UsuarioPidePage> {
   final List<PlatformFile> _files = [];
 
   bool _loading = false;
+  bool _fromCache = false;
   String _error = '';
   List<_AnalyzedDoc> _analyzedDocs = [];
   List<_WorkflowMatch> _matches = [];
+
+  static const _cacheKey = 'cache_workflow_match';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCache();
+  }
+
+  Future<void> _loadCache() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_cacheKey);
+    if (raw == null) return;
+    try {
+      final json = jsonDecode(raw) as Map<String, dynamic>;
+      setState(() {
+        _analyzedDocs = ((json['documents'] as List?) ?? [])
+            .cast<Map<String, dynamic>>()
+            .map(_AnalyzedDoc.fromJson)
+            .toList();
+        _matches = ((json['matches'] as List?) ?? [])
+            .cast<Map<String, dynamic>>()
+            .map(_WorkflowMatch.fromJson)
+            .toList();
+        _fromCache = true;
+      });
+    } catch (_) {}
+  }
 
   @override
   void dispose() {
@@ -55,6 +85,7 @@ class _UsuarioPidePageState extends State<UsuarioPidePage> {
     setState(() {
       _loading = true;
       _error = '';
+      _fromCache = false;
       _analyzedDocs = [];
       _matches = [];
     });
@@ -85,6 +116,8 @@ class _UsuarioPidePageState extends State<UsuarioPidePage> {
       }
 
       final json = jsonDecode(body) as Map<String, dynamic>;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_cacheKey, jsonEncode(json));
       setState(() {
         _analyzedDocs = ((json['documents'] as List?) ?? [])
             .cast<Map<String, dynamic>>()
@@ -94,11 +127,32 @@ class _UsuarioPidePageState extends State<UsuarioPidePage> {
             .cast<Map<String, dynamic>>()
             .map(_WorkflowMatch.fromJson)
             .toList();
+        _fromCache = false;
         _loading = false;
       });
     } catch (e) {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_cacheKey);
+      if (raw != null) {
+        try {
+          final json = jsonDecode(raw) as Map<String, dynamic>;
+          setState(() {
+            _analyzedDocs = ((json['documents'] as List?) ?? [])
+                .cast<Map<String, dynamic>>()
+                .map(_AnalyzedDoc.fromJson)
+                .toList();
+            _matches = ((json['matches'] as List?) ?? [])
+                .cast<Map<String, dynamic>>()
+                .map(_WorkflowMatch.fromJson)
+                .toList();
+            _fromCache = true;
+            _loading = false;
+          });
+          return;
+        } catch (_) {}
+      }
       setState(() {
-        _error = 'No se pudo conectar al servidor. Verifica tu conexión.';
+        _error = 'Sin conexión. Analiza al menos una vez con internet para ver resultados sin conexión.';
         _loading = false;
       });
     }
@@ -175,6 +229,10 @@ class _UsuarioPidePageState extends State<UsuarioPidePage> {
             _buildFilesCard(),
             const SizedBox(height: 16),
             _buildAnalyzeButton(),
+            if (_fromCache && (_analyzedDocs.isNotEmpty || _matches.isNotEmpty)) ...[
+              const SizedBox(height: 12),
+              _buildOfflineBanner(),
+            ],
             if (_error.isNotEmpty) ...[
               const SizedBox(height: 12),
               _buildError(),
@@ -356,6 +414,29 @@ class _UsuarioPidePageState extends State<UsuarioPidePage> {
         icon: const Icon(Icons.psychology, size: 20),
         label: const Text('Analizar y recomendar workflow',
             style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+      ),
+    );
+  }
+
+  Widget _buildOfflineBanner() {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFBEB),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFFDE68A)),
+      ),
+      child: const Row(
+        children: [
+          Icon(Icons.wifi_off, color: Color(0xFFD97706), size: 18),
+          SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Sin conexión — mostrando último análisis en caché.',
+              style: TextStyle(fontSize: 13, color: Color(0xFF92400E)),
+            ),
+          ),
+        ],
       ),
     );
   }
