@@ -7,7 +7,7 @@ class ApiConfig {
     defaultValue: '',
   );
   static const String _androidEmulatorUrl = 'http://10.0.2.2:8080/api';
-  static const String _localNetworkUrl = 'http://192.168.100.65:8080/api';
+  static const String _localNetworkUrl = 'https://13.221.189.140.sslip.io/api';
 
   static String get baseUrl {
     if (_envBaseUrl.isNotEmpty) {
