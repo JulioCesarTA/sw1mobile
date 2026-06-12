@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../core/api_client.dart';
-import '../../core/api_config.dart';
 import '../../core/models.dart';
 import 'auth_repository.dart';
 
@@ -58,12 +57,12 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() {
         _errorMessage = error.message;
       });
-    } catch (_) {
+    } catch (e) {
       if (!mounted) {
         return;
       }
       setState(() {
-        _errorMessage = 'No se pudo conectar con el backend en ${ApiConfig.baseUrl}.';
+        _errorMessage = 'Error: $e';
       });
     } finally {
       if (mounted) {
