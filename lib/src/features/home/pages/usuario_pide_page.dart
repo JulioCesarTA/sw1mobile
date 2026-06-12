@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/api_config.dart';
 import '../../../core/models.dart';
+import '../workflow_offline_service.dart';
 
 class UsuarioPidePage extends StatefulWidget {
   const UsuarioPidePage({super.key, required this.session});
@@ -31,6 +32,7 @@ class _UsuarioPidePageState extends State<UsuarioPidePage> {
   void initState() {
     super.initState();
     _loadCache();
+    WorkflowOfflineService().sync(widget.session.accessToken);
   }
 
   Future<void> _loadCache() async {
@@ -131,6 +133,23 @@ class _UsuarioPidePageState extends State<UsuarioPidePage> {
         _loading = false;
       });
     } catch (e) {
+      // Try offline TF inference first
+      final offlineSvc = WorkflowOfflineService();
+      await offlineSvc.ensureLoaded();
+      if (offlineSvc.isReady) {
+        final offlineMatches = offlineSvc.analyze(text, []);
+        if (offlineMatches.isNotEmpty) {
+          setState(() {
+            _analyzedDocs = [];
+            _matches = offlineMatches.map(_WorkflowMatch.fromJson).toList();
+            _fromCache = true;
+            _loading = false;
+          });
+          return;
+        }
+      }
+
+      // Fall back to last cached server result
       final prefs = await SharedPreferences.getInstance();
       final raw = prefs.getString(_cacheKey);
       if (raw != null) {
@@ -151,8 +170,9 @@ class _UsuarioPidePageState extends State<UsuarioPidePage> {
           return;
         } catch (_) {}
       }
+
       setState(() {
-        _error = 'Sin conexión. Analiza al menos una vez con internet para ver resultados sin conexión.';
+        _error = 'Sin conexión. Abre la app con internet al menos una vez para habilitar el modo offline.';
         _loading = false;
       });
     }
@@ -432,7 +452,7 @@ class _UsuarioPidePageState extends State<UsuarioPidePage> {
           SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Sin conexión — mostrando último análisis en caché.',
+              'Sin conexión — análisis con modelo offline (TF local).',
               style: TextStyle(fontSize: 13, color: Color(0xFF92400E)),
             ),
           ),
